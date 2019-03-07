@@ -3,12 +3,15 @@ Insight Practice Coding Challenge: Indexing
 
 # Challenge Introduction
 We have a collection of N documents. We want a dictionary that matches every word from the corpus of documents with a unique id. In this case, we have one file per document and the name of the file is simply the index of the document as shown below:
+
 ![alt text](https://github.com/thecolorkeo/cc_indexing/blob/master/figures/Documents.png)
 
 We want a dictionary that matches every word from the documents with a unique id:
+
 ![alt text](https://github.com/thecolorkeo/cc_indexing/blob/master/figures/Dictionary.png)
 
 Using both the dataset and the dictionary we can build an inverted index that gives, for every word, the list of documents that it appears in:
+
 ![alt text](https://github.com/thecolorkeo/cc_indexing/blob/master/figures/InvertedIndex.png)
 
 We want a solution that works with a massive dataset. Our algorithm has been able to run on a distributed system so we are not limited by the amounf ot storage, memory and CPU of a single machine.
