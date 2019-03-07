@@ -6,8 +6,12 @@ import sys
 import codecs
 import string
 import operator
+from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import lit
 
+conf = SparkConf()
+sc = SparkContext(conf=conf)
 spark = SparkSession.builder.getOrCreate()
 
 def build_dict(path):
@@ -24,24 +28,28 @@ def build_dict(path):
 	word_ids = {}
 	word_id = 0
 	# create a master list to output (wordid, docid) pairs
-	output_pairs = []
+	rdds = []
 
 	for filename in files:
 		words_seen_in_file = {}
-		f = spark.read.text(path + '/' + filename)
-		print(f)
-		for line in f.rdd.collect():
-			line = line.value.strip('\n').translate(str.maketrans('', '', string.punctuation)).split(" ")
-			for word in line:
-				if word not in word_ids:
-					word_ids[word] = word_id
-					word_id += 1
-				if word not in words_seen_in_file and word != '':
-					words_seen_in_file[word] = ''
-					# append to master only the first time a new word is encountered per document
-					output_pairs.append([word_ids[word], filename])
-				words_seen_in_file[word] = ''
-	return output_pairs
+		f = spark.read.text(path + '/' + filename) \
+			.withColumn("docID", lit(filename))
+		f = f.select(
+				f.docID,
+				f.value
+			) \
+			.rdd.flatMapValues(lambda line: line.strip('\n').translate(str.maketrans('', '', string.punctuation)).split(" ")) \
+			.keyBy(lambda x: x[1]) \
+			.mapValues(lambda x: x[0]) \
+			.distinct() \
+			.groupByKey() \
+			.map(lambda x: (x[0], list(x[1])))
+		rdds.append(f)
+
+	output =  sc.union(rdds) \
+				.groupByKey() \
+				.map(lambda x: (x[0], list(x[1])))
+	output.coalesce(1).saveAsTextFile('./test/')
 
 def sort_dict(list):
 	'''
@@ -81,9 +89,9 @@ def main():
 	output_path = sys.argv[2]
 
 	dict = build_dict(input_path)
-	sorted_dict = sort_dict(dict)
-	inverted_index = build_ii(sorted_dict)
-	export(inverted_index, output_path)
+	# sorted_dict = sort_dict(dict)
+	# inverted_index = build_ii(sorted_dict)
+	# export(inverted_index, output_path)
 
 if __name__ == "__main__":
 	main()
