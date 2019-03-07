@@ -14,7 +14,7 @@ Using both the dataset and the dictionary we can build an inverted index that gi
 
 ![alt text](https://github.com/thecolorkeo/cc_indexing/blob/master/figures/InvertedIndex.png)
 
-We want a solution that works with a massive dataset. Our algorithm has been able to run on a distributed system so we are not limited by the amounf ot storage, memory and CPU of a single machine.
+We want a solution that works with a massive dataset. Our algorithm has been able to run on a distributed system so we are not limited by the amount of storage, memory and CPU of a single machine.
 
 Full challenge description can be found [here](https://github.com/Samariya57/coding_challenges/blob/master/challenge.pdf)
 
@@ -26,6 +26,6 @@ Algorithm logic:
 4. Merge the intermediate results to get the final inverted index
 
 # Run
-My solution uses Apache Spark 2.4 to read in all documents from `data` and output the inverted index to `output`. The pyspark script is found in `src`. To get started, run `./run.sh` from the root folder.
+My solution uses Apache Spark 2.4 to read in all documents from `data` and output the inverted index to `output`. At the moment, I was running spark in standalone mode, but it could easily be modified to run in a cluster by adding workers. The pyspark script is found in `src`. To get started, run `./run.sh` from the root folder.
 
 If you don't have Spark, download Spark 2.4 from [here](http://apache.mirrors.tds.net/spark/spark-2.4.0/). Run `pip install pyspark  --user` from the terminal to install pyspark.
