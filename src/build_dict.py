@@ -6,6 +6,9 @@ import sys
 import codecs
 import string
 import operator
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
 
 def build_dict(path):
 	'''
@@ -13,27 +16,31 @@ def build_dict(path):
 	and collects every unique pair of
 	(wordID, docID)
 	'''
-	os.chdir(path)
+	#os.chdir(path)
 	files = os.listdir(path)
+
+	# sc = SparkContext()
 	# create one dictionary for keeping track of unique words and assigning ids
 	word_ids = {}
 	word_id = 0
 	# create a master list to output (wordid, docid) pairs
 	output_pairs = []
+
 	for filename in files:
 		words_seen_in_file = {}
-		with codecs.open(filename, mode='r', encoding='cp1252') as f:
-			for line in iter(f.readline,''):
-				line = line.strip('\n').translate(str.maketrans('', '', string.punctuation)).split(" ")
-				for word in line:
-					if word not in word_ids:
-						word_ids[word] = word_id
-						word_id += 1
-					if word not in words_seen_in_file and word != '':
-						words_seen_in_file[word] = ''
-						# append to master only the first time a new word is encountered per document
-						output_pairs.append([word_ids[word], filename])
+		f = spark.read.text(path + '/' + filename)
+		print(f)
+		for line in f.rdd.collect():
+			line = line.value.strip('\n').translate(str.maketrans('', '', string.punctuation)).split(" ")
+			for word in line:
+				if word not in word_ids:
+					word_ids[word] = word_id
+					word_id += 1
+				if word not in words_seen_in_file and word != '':
 					words_seen_in_file[word] = ''
+					# append to master only the first time a new word is encountered per document
+					output_pairs.append([word_ids[word], filename])
+				words_seen_in_file[word] = ''
 	return output_pairs
 
 def sort_dict(list):
@@ -58,14 +65,25 @@ def build_ii(sorted):
 		output[pair[0]].append(pair[1])
 	return output
 
+def export(index, path):
+	'''
+	Writes inverted index (list of lists)
+	to output file `path`
+	'''
+	out_stream = open(path, 'w')
+	for i in index:
+		out_string = '(' + str(i) + ', [' + ','.join(index[i])
+		out_string += '])'
+		out_stream.write(out_string)
 
 def main():
 	input_path = sys.argv[1]
 	output_path = sys.argv[2]
+
 	dict = build_dict(input_path)
 	sorted_dict = sort_dict(dict)
 	inverted_index = build_ii(sorted_dict)
-	print(inverted_index)
+	export(inverted_index, output_path)
 
 if __name__ == "__main__":
 	main()
