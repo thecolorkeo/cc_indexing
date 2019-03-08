@@ -24,6 +24,7 @@ def build_dict(input_path, output_path):
 	files = os.listdir(input_path)
 	rdds = [] # list of indices per document
 
+
 	for filename in files:
 		words_seen_in_file = {}
 		f = spark.read.text(input_path + '/' + filename) \
@@ -33,14 +34,12 @@ def build_dict(input_path, output_path):
 				f.value
 			) \
 			.rdd.flatMapValues(lambda line: line.strip('\n').translate(str.maketrans('', '', string.punctuation)).split(" ")) \
-			.keyBy(lambda x: x[1]) \
-			.mapValues(lambda x: x[0]) \
-			.distinct() \
-			.groupByKey() \
-			.map(lambda x: (x[0], list(x[1])))
+			.distinct()
 		rdds.append(f)
 
 	output =  sc.union(rdds) \
+				.keyBy(lambda x: x[1]) \
+				.mapValues(lambda x: x[0]) \
 				.groupByKey() \
 				.map(lambda x: (x[0], list(x[1])))
 	output.coalesce(1).saveAsTextFile(output_path)
